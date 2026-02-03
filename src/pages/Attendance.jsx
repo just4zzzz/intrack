@@ -19,15 +19,15 @@ export function Attendance() {
 
   const handleTimeIn = () => {
     const now = new Date()
-    const timeString = now.toLocaleTimeString("en-US", { 
-      hour: "2-digit", 
-      minute: "2-digit" 
+    const timeString = now.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit"
     })
     const dateString = now.toISOString().split("T")[0]
-    
+
     setTimeIn(timeString)
     setIsClockedIn(true)
-    
+
     const newRecord = {
       id: Date.now(),
       date: dateString,
@@ -36,31 +36,44 @@ export function Attendance() {
       totalHours: 0,
       status: "time-in-only"
     }
-    
+
     const updated = [...attendanceRecords, newRecord]
     setAttendanceRecords(updated)
     saveAttendance(updated)
-    
+
     alert(`Time In: ${timeString}`)
   }
 
   const handleTimeOut = () => {
     const now = new Date()
-    const timeString = now.toLocaleTimeString("en-US", { 
-      hour: "2-digit", 
-      minute: "2-digit" 
+    const timeString = now.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit"
     })
-    
+
     setTimeOut(timeString)
     setIsClockedIn(false)
-    
+
     const today = new Date().toISOString().split("T")[0]
-    const updated = attendanceRecords.map(record => {
-      if (record.date === today && record.status === "time-in-only") {
+    const openRecordIndex = [...attendanceRecords]
+      .reverse()
+      .findIndex(record => record.status === "time-in-only")
+
+    if (openRecordIndex === -1) {
+      alert("No open time-in record found.")
+      return
+    }
+
+    const actualIndex = attendanceRecords.length - 1 - openRecordIndex
+    const updated = attendanceRecords.map((record, index) => {
+      if (index === actualIndex) {
         const timeInDate = new Date(`${record.date} ${record.timeIn}`)
         const timeOutDate = new Date(`${today} ${timeString}`)
+        if (timeOutDate <= timeInDate) {
+          timeOutDate.setDate(timeOutDate.getDate() + 1)
+        }
         const hours = (timeOutDate - timeInDate) / (1000 * 60 * 60)
-        
+
         return {
           ...record,
           timeOut: timeString,
@@ -70,10 +83,10 @@ export function Attendance() {
       }
       return record
     })
-    
+
     setAttendanceRecords(updated)
     saveAttendance(updated)
-    
+
     alert(`Time Out: ${timeString}`)
   }
 
@@ -83,7 +96,7 @@ export function Attendance() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-8">Attendance</h1>
-      
+
       <Card className="max-w-md mx-auto mb-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -119,15 +132,15 @@ export function Attendance() {
           )}
 
           <div className="flex gap-2">
-            <Button 
-              onClick={handleTimeIn} 
+            <Button
+              onClick={handleTimeIn}
               disabled={isClockedIn}
               className="flex-1"
             >
               Time In
             </Button>
-            <Button 
-              onClick={handleTimeOut} 
+            <Button
+              onClick={handleTimeOut}
               disabled={!isClockedIn}
               variant="outline"
               className="flex-1"

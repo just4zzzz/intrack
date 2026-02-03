@@ -11,6 +11,8 @@ export function Logbook() {
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
   const [workDescription, setWorkDescription] = useState("")
+  const [hasLunchBreak, setHasLunchBreak] = useState(false)
+  const [lunchBreakHours, setLunchBreakHours] = useState("")
   const [savedEntries, setSavedEntries] = useState([])
   const [showSuccess, setShowSuccess] = useState(false)
   const [settings, setSettings] = useState({
@@ -26,8 +28,8 @@ export function Logbook() {
     setSettings(savedSettings)
   }, [])
 
-  // Calculate hours with grace window
-  const calculateHours = (startTime, endTime, scheduledTimeIn, graceWindowMinutes) => {
+  // Calculate hours with grace window and lunch break deduction
+  const calculateHours = (startTime, endTime, scheduledTimeIn, graceWindowMinutes, lunchBreak = 0) => {
     if (!startTime || !endTime) return { hours: 0, adjustedStartTime: startTime, wasAdjusted: false }
 
     const startDate = new Date(`2000-01-01 ${startTime}`)
@@ -49,7 +51,13 @@ export function Logbook() {
 
     // Calculate hours
     const timeInCalc = new Date(`2000-01-01 ${timeInForCalculation}`)
-    const hours = (endDate - timeInCalc) / (1000 * 60 * 60)
+    if (endDate <= timeInCalc) {
+      endDate.setDate(endDate.getDate() + 1)
+    }
+    let hours = (endDate - timeInCalc) / (1000 * 60 * 60)
+
+    // Deduct lunch break
+    hours = Math.max(0, hours - lunchBreak)
 
     return {
       hours: Math.max(0, hours),
@@ -61,6 +69,12 @@ export function Logbook() {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (date && week && startTime && endTime && workDescription) {
+      // Validate lunch break if selected
+      if (hasLunchBreak && !lunchBreakHours) {
+        alert("Please enter lunch break duration")
+        return
+      }
+
       // Check if an entry with the same date already exists
       const duplicateEntry = savedEntries.some(entry => entry.date === date)
       if (duplicateEntry) {
@@ -68,11 +82,13 @@ export function Logbook() {
         return
       }
 
+      const lunchHours = hasLunchBreak ? parseFloat(lunchBreakHours) || 0 : 0
       const calculation = calculateHours(
         startTime,
         endTime,
         settings.scheduledTimeIn,
-        settings.graceWindowMinutes
+        settings.graceWindowMinutes,
+        lunchHours
       )
 
       // Get month name from date
@@ -88,6 +104,8 @@ export function Logbook() {
         adjustedStartTime: calculation.adjustedStartTime,
         wasAdjusted: calculation.wasAdjusted,
         hours: parseFloat(calculation.hours.toFixed(2)),
+        hasLunchBreak: hasLunchBreak,
+        lunchBreakHours: lunchHours,
         workDescription: workDescription.trim(),
         createdAt: new Date().toISOString()
       }
@@ -104,6 +122,8 @@ export function Logbook() {
       setWeek("")
       setStartTime("")
       setEndTime("")
+      setHasLunchBreak(false)
+      setLunchBreakHours("")
       setWorkDescription("")
     } else {
       alert("Please fill in Date, Week, Start Time, End Time, and Work Description")
@@ -216,18 +236,56 @@ export function Logbook() {
               </div>
             </div>
 
+            {/* Lunch Break */}
+            <div className="space-y-3 p-3 bg-muted rounded-md">
+              <label htmlFor="hasLunchBreak" className="flex items-center gap-2 cursor-pointer">
+                <input
+                  id="hasLunchBreak"
+                  type="checkbox"
+                  checked={hasLunchBreak}
+                  onChange={(e) => setHasLunchBreak(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">Had lunch break</span>
+              </label>
+              {hasLunchBreak && (
+                <div>
+                  <label htmlFor="lunchBreakHours" className="block text-sm font-medium mb-2">
+                    Lunch Break Duration (hours) *
+                  </label>
+                  <input
+                    id="lunchBreakHours"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    value={lunchBreakHours}
+                    onChange={(e) => setLunchBreakHours(e.target.value)}
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                    placeholder="e.g., 1 or 1.5"
+                  />
+                </div>
+              )}
+            </div>
+
             {/* Hours Preview */}
             {startTime && endTime && (
               <div className="p-3 bg-muted rounded-md">
                 <p className="text-xs text-muted-foreground">Calculated Hours</p>
-                <p className="text-lg font-semibold">
-                  {calculateHours(startTime, endTime, settings.scheduledTimeIn, settings.graceWindowMinutes).hours.toFixed(2)} hours
-                </p>
-                {calculateHours(startTime, endTime, settings.scheduledTimeIn, settings.graceWindowMinutes).wasAdjusted && (
-                  <p className="text-xs text-primary mt-1">
-                    Grace window applied: Using scheduled time ({formatTime(settings.scheduledTimeIn)})
+                <div className="space-y-1">
+                  <p className="text-lg font-semibold">
+                    {calculateHours(startTime, endTime, settings.scheduledTimeIn, settings.graceWindowMinutes, hasLunchBreak ? parseFloat(lunchBreakHours) || 0 : 0).hours.toFixed(2)} hours
                   </p>
-                )}
+                  {hasLunchBreak && lunchBreakHours && (
+                    <p className="text-xs text-muted-foreground">
+                      ({calculateHours(startTime, endTime, settings.scheduledTimeIn, settings.graceWindowMinutes, 0).hours.toFixed(2)}h - {parseFloat(lunchBreakHours).toFixed(2)}h lunch break)
+                    </p>
+                  )}
+                  {calculateHours(startTime, endTime, settings.scheduledTimeIn, settings.graceWindowMinutes, hasLunchBreak ? parseFloat(lunchBreakHours) || 0 : 0).wasAdjusted && (
+                    <p className="text-xs text-primary mt-1">
+                      Grace window applied: Using scheduled time ({formatTime(settings.scheduledTimeIn)})
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -287,6 +345,12 @@ export function Logbook() {
                           <p className="text-xs font-medium text-muted-foreground">Work Description</p>
                           <p className="mt-0.5">{entry.workDescription}</p>
                         </div>
+                        {entry.hasLunchBreak && (
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground">Lunch Break</p>
+                            <p className="mt-0.5">{entry.lunchBreakHours}h</p>
+                          </div>
+                        )}
                         {entry.learnings && (
                           <div>
                             <p className="text-xs font-medium text-muted-foreground">Learnings</p>
