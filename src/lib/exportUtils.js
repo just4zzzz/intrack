@@ -362,9 +362,6 @@ export async function exportOJTLogbookFormat(logbookEntries, userProfile) {
     }
   })
 
-  // Delete the default empty sheet
-  workbook.removeWorksheet(workbook.worksheets[1])
-
   // Download the file
   const filename = `OJT_Logbook_${userProfile.lastName}_${new Date().toISOString().split("T")[0]}.xlsx`
   await downloadExcel(workbook, filename)
