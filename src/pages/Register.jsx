@@ -24,7 +24,9 @@ export function Register() {
             ...prev,
             [name]: value,
         }))
-    }async (e) => {
+    }
+
+    const handleRegister = async (e) => {
         e.preventDefault()
         setError("")
 
@@ -68,18 +70,8 @@ export function Register() {
         } catch (err) {
             setError(err.message || "Registration failed. Please try again.")
         } finally {
-      setLoa{
-                error && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                        {error}
-                    </div>
-                )
-            }
-
-            ding(false)
-        }edirect to login
-        alert("Registration successful! Please login.")
-        navigate("/login")
+            setLoading(false)
+        }
     }
 
     return (
@@ -93,6 +85,12 @@ export function Register() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleRegister} className="space-y-4">
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                                {error}
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="firstName" className="block text-sm font-medium mb-2">
@@ -186,9 +184,9 @@ export function Register() {
                                 value={formData.password}
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                                placeholder="Enter your password" disabled={loading}>
-                                {loading ? "Registering..." : "Register"}ed
-              />
+                                placeholder="Enter your password"
+                                required
+                            />
                         </div>
 
                         <div>
@@ -207,8 +205,8 @@ export function Register() {
                             />
                         </div>
 
-                        <Button type="submit" className="w-full">
-                            Register
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading ? "Registering..." : "Register"}
                         </Button>
 
                         <p className="text-center text-sm text-muted-foreground mt-4">
