@@ -19,9 +19,17 @@ function App() {
       try {
         const session = await authService.getSession()
         setIsAuthenticated(!!session)
+
+        const userId = session?.user?.id
+        if (userId) {
+          localStorage.setItem("currentUserId", userId)
+        } else {
+          localStorage.removeItem("currentUserId")
+        }
       } catch (error) {
         console.error("Session check error:", error)
         setIsAuthenticated(false)
+        localStorage.removeItem("currentUserId")
       } finally {
         setLoading(false)
       }
@@ -32,6 +40,13 @@ function App() {
     // Listen for auth state changes
     const { data: authListener } = authService.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session)
+
+      const userId = session?.user?.id
+      if (userId) {
+        localStorage.setItem("currentUserId", userId)
+      } else {
+        localStorage.removeItem("currentUserId")
+      }
     })
 
     // Cleanup subscription

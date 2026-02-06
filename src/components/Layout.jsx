@@ -1,8 +1,10 @@
-import { Link, useLocation, Outlet } from "react-router-dom"
+import { Link, useLocation, Outlet, useNavigate } from "react-router-dom"
 import { Button } from "./ui/Button"
+import { authService } from "@/lib/auth"
 
 export function Layout() {
   const location = useLocation()
+  const navigate = useNavigate()
   
   const navItems = [
     { path: "/dashboard", label: "Dashboard" },
@@ -34,8 +36,10 @@ export function Layout() {
               <Button 
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  window.location.href = "/login"
+                onClick={async () => {
+                  await authService.signOut()
+                  localStorage.removeItem("currentUserId")
+                  navigate("/login", { replace: true })
                 }}
               >
                 Logout
