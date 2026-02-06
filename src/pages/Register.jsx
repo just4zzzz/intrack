@@ -80,7 +80,7 @@ export function Register() {
                 <CardHeader>
                     <CardTitle className="text-center text-3xl">Create Account</CardTitle>
                     <p className="text-center text-muted-foreground mt-2">
-                        Register for Testing - OJT / Intern Logbook System
+                        Register for Intrack - OJT / Intern Logbook System
                     </p>
                 </CardHeader>
                 <CardContent>
